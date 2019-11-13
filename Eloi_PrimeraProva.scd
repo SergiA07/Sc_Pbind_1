@@ -323,3 +323,6 @@ Pbindef(\clickSin, \amp, 0.05).play(t);
 
 
 314 * 0.60240963855422
+
+
+///Elooooooooooooi

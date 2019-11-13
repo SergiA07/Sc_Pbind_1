@@ -1,6 +1,6 @@
 // Afegit a Github
 //Afegit a Github II
-
+//Branca Eloi que és més maco que el Sergi
 
 (
 ServerQuit.removeAll;

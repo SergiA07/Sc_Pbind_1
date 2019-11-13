@@ -1,7 +1,3 @@
-// Afegit a Github
-//Afegit a Github II
-//Branca Eloi que és més maco que el Sergi
-
 (
 ServerQuit.removeAll;
 ServerBoot.removeAll;
@@ -324,8 +320,3 @@ Pbindef(\clickSin, \amp, 0.05).play(t);
 
 
 314 * 0.60240963855422
-
-
-///Elooooooooooooi....
-//Sergiiiii
-//ELOI2

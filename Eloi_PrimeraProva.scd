@@ -1,5 +1,5 @@
 // Afegit a Github
-// Prova Branch Sergi
+
 
 (
 ServerQuit.removeAll;

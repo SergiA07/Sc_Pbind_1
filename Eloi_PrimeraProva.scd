@@ -6,6 +6,7 @@ ServerBoot.removeAll;
 ServerTree.removeAll;
 Buffer.freeAll;
 
+
 s.waitForBoot({
 
 
@@ -36,11 +37,20 @@ SynthDef(\play, {
 		senal = HPF.ar(senal, cutFreqHigh);
 		senal = Pan2.ar(senal, pan, amp);
 		OffsetOut.ar(out, senal);}).add;
-
+/*
+SynthDef(\reverb, {
+		arg in=20, out=0, amp=1, mix=0.05, freqF=4000, decay=2.5, delay=0.05;
+		var senal, wet, dry;
+		dry = In.ar(in, 2);
+		wet = dry;
+		wet = DelayN.ar(wet, delay, delay);
+		20.do{wet = AllpassN.ar(wet, 0.05,{Rand(0.001,0.05)}!2, decay); wet = LPF.ar(wet,freqF);};
+		senal = XFade2.ar(dry, wet, mix*2-1, amp);
+		Out.ar(out, senal);}).add;
+*/
 
 SynthDef(\kick2, {
-	arg
-	 amp=1, ampCua=0.5, rqCua=0.05, pan=0, out=0, rel=1, freqPulse=2,
+	arg amp=1, ampCua=0.5, rqCua=0.05, pan=0, out=0, rel=1, freqPulse=2,
 	 freqGreu=57, freqMitja=750, freqAguda=1320, freqGreuArribada=52,
 	 volFreqAguda=0.5, volFreqMitja=1, volFreqGreu=1;
     var snd, cua, final;
@@ -88,6 +98,8 @@ SynthDef(\click1, {
 	sig = sig * env;
 	Out.ar(0, sig);}).add;
 
+
+//ServerTree.add(~grupos);
 
 Pbindef.all.do(_.clear);
 
@@ -240,7 +252,7 @@ s.bind({
 
 				], inf)).play(t);
 
-});
+
 
 
 Pbindef(\bomboProcessing,
@@ -263,10 +275,25 @@ Pbindef(\bomboProcessing,
 		{~processing.sendMsg("/", posCercle, 180, ampCercle, ampCercle) }
 		{~processing.sendMsg("/", -1, -1, 0, 0) }
 		*/
-	})).play
+	})).play(t);
 
+Pbindef(\samples2,
+	\instrument, \play,
+	\buf, ~buffers[1],
+	\vel, Prand([ 1.5], inf),
+    \amp, Pexprand(0.5, 0.95, inf),
+	\dur, Pwrand([Pseq([1/8],8), Pseq([1/4],4), Pseq([1/2],2)],[0.95,0.03,0.02],inf),
+	\dur, Prand([1/4, 1/2], inf),
+	\pos, Pwhite(0, Pkey(\buf).collect(_.numFrames), inf).trace,
+	\pos, 530564,
+	\sus, Pkey(\dur) *  0.125 *  Pkey(\vel).sqrt.reciprocal,
+	\pan, Pwhite(-1, 1, inf),
+	//\out, Pwrand( [0, ~bus[\reverb0], ~bus[\reverb1], ~bus[\pitchShift]],[0.8, 0.05, 0.05, 0.1],inf),
+	\out, 0
+	).play(t);
+});
 
-})
+});
 )
 
 
@@ -285,6 +312,40 @@ Pbindef(\bomboProcessing,
 
 
 ///////////////////////////// PBIND's PROVES
+
+
+Pbindef(\granocaotico1,
+    \instrument, \play,
+	\buf, Pfunc({  ~sampleEscogido = (0 .. (~buffers.size -1)).choose; ~samplesFinal = ~buffers.at(~sampleEscogido); }),
+	\vel, Pwhite(0.1, 2.5, inf),
+    \amp, Pexprand(0.5, 0.95, inf) * Pseg([0.75, 0.75, 0.25, 0.5, 1 ], [ 3*4, 4, 4, 4 ]),
+	\dur, Pwrand([Pseq([1/8],8), Pseq([1/4],4), Pseq([1/2],2)],[0.95,0.03,0.02],inf) / 8,
+	\pos, Pwhite(0, Pkey(\buf).collect(_.numFrames), inf),
+	\sus, Pkey(\dur) *  1.1 *  Pkey(\vel).sqrt.reciprocal,
+	\pan, Pwrand([Pseq([0],16),Pseq([-1,1],1),Pwhite(-0.8,0.8,8)],[0.8,0.1,0.1],inf),
+	//\out, Pwrand( [0, ~bus[\reverb0], ~bus[\reverb1], ~bus[\pitchShift]],[0.8, 0.05, 0.05, 0.1],inf),
+	\out, 0
+).play(t);
+//.quant_([1]);
+
+Pbindef(\samples1,
+    \instrument, \play,
+	\buf, ~buffers[2],
+	\vel, Prand([ 1.5], inf),
+    \amp, Pexprand(0.5, 0.95, inf),
+	\dur, Pwrand([Pseq([1/8],8), Pseq([1/4],4), Pseq([1/2],2)],[0.95,0.03,0.02],inf),
+	\dur, Prand([1/4, 1/2], inf),
+	\pos, Pwhite(0, Pkey(\buf).collect(_.numFrames), inf).trace,
+	\pos, 330564,
+	\sus, Pkey(\dur) *  0.125 *  Pkey(\vel).sqrt.reciprocal,
+	\pan, Pwhite(-1, 1, inf),
+	//\out, Pwrand( [0, ~bus[\reverb0], ~bus[\reverb1], ~bus[\pitchShift]],[0.8, 0.05, 0.05, 0.1],inf),
+	\out, 20
+).play(t);
+
+
+
+
 
 
 Pbindef(\bomboprova,

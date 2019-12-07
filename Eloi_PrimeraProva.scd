@@ -1,3 +1,4 @@
+//MASTER
 
 (
 ServerQuit.removeAll;

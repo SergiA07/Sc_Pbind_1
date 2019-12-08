@@ -6,295 +6,273 @@ ServerBoot.removeAll;
 ServerTree.removeAll;
 Buffer.freeAll;
 
-
 s.waitForBoot({
 
+	~bus = Dictionary.new;
+	~bus.add(\reverb0 -> Bus.audio(s,2));
+	~bus.add(\reverb1 -> Bus.audio(s,2));
+	~bus.add(\pitchShift -> Bus.audio(s,2));
+	~bus.add(\delay -> Bus.audio(s,2));
+	~bus.add(\distorsion -> Bus.audio(s,2));
 
-~adreces = (PathName(thisProcess.nowExecutingPath).parentPath ++ "sons/*").pathMatch;
-~exclusio = PathName(thisProcess.nowExecutingPath).parentPath ++ "sons/Icon";
-~adreces.do({ arg adreca, indice; adreca.compare(~exclusio).postln; if(adreca.compare(~exclusio).abs <= 1) {~adreces.removeAt(indice)}});
+	s.sync;
 
-~buffers = ~adreces.collect({arg adreca; Buffer.readChannel(s,adreca, channels:[0])});
+	SynthDef(\delay, {
+		arg maxtime=0.2, time=0.1, decay= 2, in=40, out=0;
+		var senal;
+		senal =In.ar(in, 2);
+		senal= AllpassN.ar(senal, maxtime, time.clip(0, maxtime), decay);
+		Out.ar(out, senal)}).add;
 
+	s.sync;
 
-//adreça de processing
-~processing = NetAddr("127.0.0.1", 12000);
+	~adreces = (PathName(thisProcess.nowExecutingPath).parentPath ++ "sons/*").pathMatch;
+	~exclusio = PathName(thisProcess.nowExecutingPath).parentPath ++ "sons/Icon";
+	~adreces.do({ arg adreca, indice; adreca.compare(~exclusio).postln; if(adreca.compare(~exclusio).abs <= 1) {~adreces.removeAt(indice)}});
+	~buffers = ~adreces.collect({arg adreca; Buffer.readChannel(s,adreca, channels:[0])});
 
-//establim tempo
-t = TempoClock.new(130/60).permanent_(true);
+	s.sync;
 
+	~processing = NetAddr("127.0.0.1", 12000);
+	~tempo = TempoClock.new(130/60).permanent_(true);
 
-s.sync;
+	s.sync;
 
-
-SynthDef(\play, {
+	SynthDef(\play, {
 		arg buf=0, vel=1, pos=0, cutFreqLow = 20000, cutFreqHigh = 0, atk=0.001, sus=0.2, rel=0.05, amp=1, pan=0, out=0;
 		var senal, env;
 	    env = Env([0,1,1,0],[atk,sus,rel],[1,0,-1]).kr(2);
-		senal = PlayBuf.ar(1, buf, vel * BufRateScale.kr(buf), startPos:pos, loop: 1);
+		senal = PlayBuf.ar(1, buf, vel * BufRateScale.kr(buf), startPos:pos, loop: 0);
 		senal = senal * env;
 		senal = LPF.ar(senal, cutFreqLow);
 		senal = HPF.ar(senal, cutFreqHigh);
 		senal = Pan2.ar(senal, pan, amp);
 		OffsetOut.ar(out, senal);}).add;
-/*
-SynthDef(\reverb, {
-		arg in=20, out=0, amp=1, mix=0.05, freqF=4000, decay=2.5, delay=0.05;
-		var senal, wet, dry;
-		dry = In.ar(in, 2);
-		wet = dry;
-		wet = DelayN.ar(wet, delay, delay);
-		20.do{wet = AllpassN.ar(wet, 0.05,{Rand(0.001,0.05)}!2, decay); wet = LPF.ar(wet,freqF);};
-		senal = XFade2.ar(dry, wet, mix*2-1, amp);
-		Out.ar(out, senal);}).add;
-*/
-
-SynthDef(\kick2, {
-	arg amp=1, ampCua=0.5, rqCua=0.05, pan=0, out=0, rel=1, freqPulse=2,
-	 freqGreu=57, freqMitja=750, freqAguda=1320, freqGreuArribada=52,
-	 volFreqAguda=0.5, volFreqMitja=1, volFreqGreu=1;
-    var snd, cua, final;
-    snd = DC.ar(0);
-    snd = snd + (HPF.ar(Hasher.ar(Sweep.ar), freqAguda) * Env.perc(0.003, 0.03).kr * volFreqAguda);
-    snd = snd + (SinOsc.ar(XLine.ar(freqMitja, 161, 0.02)) * Env.perc(0.0005, 0.02).kr * volFreqMitja);
-    snd = snd + (SinOsc.ar(XLine.ar(freqGreu, freqGreuArribada, 0.04)) * Env.perc(0.0005, 0.3).kr * volFreqGreu);
-    snd = snd.tanh;
-
-	cua = ClipNoise.ar(1);
-	cua = BPF.ar(cua, freqAguda, Env([0.25, rqCua], [rel], \lin).kr);
-	cua = cua * LFPulse.kr(Env([0, freqPulse, 0], [rel/2, rel/2], \lin).kr);
-	cua = cua * Env([0.01, ampCua, 0.001], [0.005, rel], \sine).kr(2);
-
-	final = snd + cua;
-	final = Pan2.ar(final, pan, amp);
-
-	Out.ar(out, final);}).add;
 
 
-SynthDef(\noise1, {
-	arg amp, rel=0.1, pan, filtre=1000;
-	var sig, env;
-	sig = WhiteNoise.ar(amp);
-	env = Env.perc(0.01, rel).kr(2);
-	sig = HPF.ar(sig, filtre);
-	sig = sig * env;
-	sig = Pan2.ar(sig, pan);
-	Out.ar(0, sig);}).add;
+	SynthDef(\kick2, {
+		arg amp=1, ampCua=0.5, rqCua=0.05, pan=0, out=0, rel=1, freqPulse=2,
+		 freqGreu=57, freqMitja=750, freqAguda=1320, freqGreuArribada=52,
+		 volFreqAguda=0.5, volFreqMitja=1, volFreqGreu=1;
+	    var snd, cua, final;
+	    snd = DC.ar(0);
+	    snd = snd + (HPF.ar(Hasher.ar(Sweep.ar), freqAguda) * Env.perc(0.003, 0.03).kr * volFreqAguda);
+	    snd = snd + (SinOsc.ar(XLine.ar(freqMitja, 161, 0.02)) * Env.perc(0.0005, 0.02).kr * volFreqMitja);
+	    snd = snd + (SinOsc.ar(XLine.ar(freqGreu, freqGreuArribada, 0.04)) * Env.perc(0.0005, 0.3).kr * volFreqGreu);
+	    snd = snd.tanh;
+
+		cua = ClipNoise.ar(1);
+		cua = BPF.ar(cua, freqAguda, Env([0.25, rqCua], [rel], \lin).kr);
+		cua = cua * LFPulse.kr(Env([0, freqPulse, 0], [rel/2, rel/2], \lin).kr);
+		cua = cua * Env([0.01, ampCua, 0.001], [0.005, rel], \sine).kr(2);
+
+		final = snd + cua;
+		final = Pan2.ar(final, pan, amp);
+
+		Out.ar(out, final);}).add;
 
 
-SynthDef(\crackle1, {
-	arg amp, chaos=1.5, pan, filtre=1000;
-	var sig, env;
-	sig = Crackle.ar(chaos, amp);
-	sig = HPF.ar(sig, filtre);
-	Out.ar(0, sig);}).add;
+	SynthDef(\noise1, {
+		arg amp, rel=0.1, pan, filtre=1000;
+		var sig, env;
+		sig = WhiteNoise.ar(amp);
+		env = Env.perc(0.01, rel).kr(2);
+		sig = HPF.ar(sig, filtre);
+		sig = sig * env;
+		sig = Pan2.ar(sig, pan);
+		Out.ar(0, sig);}).add;
 
 
-SynthDef(\click1, {
-	arg freq=100, amp=1;
-	var sig, env;
-	env = Env.perc(0.01, 0.25).kr(2);
-	sig = SinOsc.ar(freq,0, amp);
-	sig = sig * env;
-	Out.ar(0, sig);}).add;
+	SynthDef(\crackle1, {
+		arg amp, chaos=1.5, pan, filtre=1000;
+		var sig, env;
+		sig = Crackle.ar(chaos, amp);
+		sig = HPF.ar(sig, filtre);
+		Out.ar(0, sig);}).add;
 
 
-//ServerTree.add(~grupos);
-
-Pbindef.all.do(_.clear);
-
-s.sync;
+	SynthDef(\click1, {
+		arg freq=100, amp=1;
+		var sig, env;
+		env = Env.perc(0.01, 0.25).kr(2);
+		sig = SinOsc.ar(freq,0, amp);
+		sig = sig * env;
+		Out.ar(0, sig);}).add;
 
 
 
-///// PBIND's DEFINITUS
+	Pbindef.all.do(_.clear);
 
-s.bind({
+	s.sync;
+
+	///// PBIND's DEFINITUS
 
 	Pbindef(\noise4_5,
-			\instrument, \noise1,
-			#[dur, freq, rel, amp, pan, filtre], Prand([
-
-				Pseq([
-
-					Ptuple([ // patro 4x4
-
-						Pseq([   //dur
-							1/2, 1/4, 1/4,
-							1/4, 1/2, 1/4,
-							1/4, 1/2, 1/4,
-							1/4, 1/4, 1/2,
+		\instrument, \noise1,
+		#[dur, freq, rel, amp, pan, filtre], Prand([
+			Pseq([
+				Ptuple([ // patro 4x4
+					Pseq([   //dur
+						1/2, 1/4, 1/4,
+						1/4, 1/2, 1/4,
+						1/4, 1/2, 1/4,
+						1/4, 1/4, 1/2,
 						],1),
-
-						Pseq([   // freq
-							1, 1, 1,
-							\, 1, 1,
-							\, 1, 1,
-							1, 1, 1,
+					Pseq([   // freq
+						1, 1, 1,
+						\, 1, 1,
+						\, 1, 1,
+						1, 1, 1,
 						], 1),
-
-						Pwrand([0.02, 0.05, 0.1], [0.5, 0.25, 0.25], 12), // rel
-
-						Pseq([ 0.25, Pwhite(0.05, 0.15, 2) ], 4), // amp
-
-						Pseq([ 0, -1, 1], 12), // Pan2
-
-						Pwhite(100, 10000, 12)
-					    ], 1),
-
-
-					Ptuple([   // patro 5x4
-
-						Pseq([   //dur
-							1/2, 1/4, 1/4,
-							1/4, 1/4, 1/2,
-							1/4, 1/4, 1/2,
-							1/4, 1/2, 1/4,
-							1/4, 1/4, 1/2,
-
+					Pwrand([0.02, 0.05, 0.1], [0.5, 0.25, 0.25], 12), // rel
+					Pseq([ 0.25, Pwhite(0.05, 0.15, 2) ], 4), // amp
+					Pseq([ 0, -1, 1], 12), // Pan2
+					Pwhite(100, 10000, 12)
+					], 1),
+				Ptuple([   // patro 5x4
+					Pseq([   //dur
+						1/2, 1/4, 1/4,
+						1/4, 1/4, 1/2,
+						1/4, 1/4, 1/2,
+						1/4, 1/2, 1/4,
+						1/4, 1/4, 1/2,
 						],1),
-
-						Pseq([   // freq
-							1, 1, 1,
-							1, 1, 1,
-							\, 1, 1,
-							\, 1, 1,
-							1, 1, 1
-
+					Pseq([   // freq
+						1, 1, 1,
+						1, 1, 1,
+						\, 1, 1,
+						\, 1, 1,
+						1, 1, 1
 						], 1),
-
-						Pwrand([0.02, 0.05, 0.1], [0.5, 0.25, 0.25], 15), // rel
-
-						Pseq([ 0.25, Pwhite(0.05, 0.15, 2) ], 5), // amp
-
-						Pseq([ 0, -1, 1], 15), // Pan2
-
-						Pshuf( (100!15), 1)
-
-					    ],1),
-
+					Pwrand([0.02, 0.05, 0.1], [0.5, 0.25, 0.25], 15), // rel
+					Pseq([ 0.25, Pwhite(0.05, 0.15, 2) ], 5), // amp
+					Pseq([ 0, -1, 1], 15), // Pan2
+					Pshuf( (100!15), 1)
+					],1),
 				], 1),
-
-
-
-				Pseq([
-
-					Ptuple([ // patro 4x4
-
-						Pseq([   //dur
-							1/2, 1/4, 1/4,
-							1/2, 1/2,
-							1/4, 1/2, 1/4,
-							1/4, 1/4, 1/4, 1/4,
+			Pseq([
+				Ptuple([ // patro 4x4
+					Pseq([   //dur
+						1/2, 1/4, 1/4,
+						1/2, 1/2,
+						1/4, 1/2, 1/4,
+						1/4, 1/4, 1/4, 1/4,
 						],1),
-
-						Pseq([   // freq
-							1, 1, 1,
-							\, 1,
-							\, 1, 1,
-							1, 1, 1, 1
+					Pseq([   // freq
+						1, 1, 1,
+						\, 1,
+						\, 1, 1,
+						1, 1, 1, 1
 						], 1),
-
-						Pwrand([0.02, 0.05, 0.1], [0.5, 0.25, 0.25], 12), // rel
-
-						Pseq([
-							0.25, Pwhite(0.05, 0.15, 2),
-							0.25, Pwhite(0.05, 0.15, 1),
-							0.25, Pwhite(0.05, 0.15, 2),
-							0.25, Pwhite(0.05, 0.15, 3),
+					Pwrand([0.02, 0.05, 0.1], [0.5, 0.25, 0.25], 12), // rel
+					Pseq([
+						0.25, Pwhite(0.05, 0.15, 2),
+						0.25, Pwhite(0.05, 0.15, 1),
+						0.25, Pwhite(0.05, 0.15, 2),
+						0.25, Pwhite(0.05, 0.15, 3),
 						],1), // amp
-
-						Pseq([ 0, -1, 1, 0, -1, 0, -1, 1, 0, -1, 1, -1], 1), // Pan2
-
-						Pwhite(100, 10000, 12)
-
+					Pseq([ 0, -1, 1, 0, -1, 0, -1, 1, 0, -1, 1, -1], 1), // Pan2
+					Pwhite(100, 10000, 12)
+					],1),
+				Ptuple([ // patro 5x4
+					Pseq([   //dur
+						1/2, 1/4, 1/4,
+						1/2, 1/2,
+						1/4, 1/4, 1/2,
+						1/4, 1/2, 1/4,
+						1/4, 1/4, 1/4, 1/4,
 						],1),
-
-					Ptuple([ // patro 5x4
-
-						Pseq([   //dur
-							1/2, 1/4, 1/4,
-							1/2, 1/2,
-							1/4, 1/4, 1/2,
-							1/4, 1/2, 1/4,
-							1/4, 1/4, 1/4, 1/4,
-
-						],1),
-
-						Pseq([   // freq
-							1, 1, 1,
-							1, 1,
-							1, 1, \,
-							\, 1, 1,
-							1, 1, 1, 1
-
+					Pseq([   // freq
+						1, 1, 1,
+						1, 1,
+						1, 1, \,
+						\, 1, 1,
+						1, 1, 1, 1
 						], 1),
-
-						Pwrand([0.02, 0.05, 0.1], [0.5, 0.25, 0.25], 15), // rel
-
-						Pseq([
-							0.25, Pwhite(0.05, 0.15, 2),
-							0.25, Pwhite(0.05, 0.15, 1),
-							0.25, Pwhite(0.05, 0.15, 2),
-							0.25, Pwhite(0.05, 0.15, 2),
-							0.25, Pwhite(0.05, 0.15, 3),
+					Pwrand([0.02, 0.05, 0.1], [0.5, 0.25, 0.25], 15), // rel
+					Pseq([
+						0.25, Pwhite(0.05, 0.15, 2),
+						0.25, Pwhite(0.05, 0.15, 1),
+						0.25, Pwhite(0.05, 0.15, 2),
+						0.25, Pwhite(0.05, 0.15, 2),
+						0.25, Pwhite(0.05, 0.15, 3),
 						], 1), // amp
-
-						Pseq([ 0, -1, 1], 15), // Pan2
-
-						Pshuf( (100!15), 1)
-
-						],1),
-
+					Pseq([ 0, -1, 1], 15), // Pan2
+					Pshuf( (100!15), 1)
+					],1),
 				], 1)
+			], inf));
 
+	Pbindef(\bomboProcessing,
+		\instrument, \kick2,
+		\dur, Prand([1, 0.25, 0.5], inf) / 2,
+		\pfunc, Ptime.new,
+		\amp, Pwhite(0.25, 1, inf),
+		\pan, Pwhite(-0.75, 0.75, inf),
+		\prova, Pfunc({
+			arg event;
+			var ampCercle, posCercle;
+			ampCercle = event[\amp].linlin(0.25, 1, 25, 150).asInteger;
+			posCercle = event[\pan].linlin(-0.75, 0.75, 100, 500).asInteger;
+			~processing.sendMsg("/", posCercle, 180, ampCercle, ampCercle);
+			}));
 
+	Pbindef(\samples2,
+		\instrument, \play,
+		\buf, ~buffers[1],
+		\vel, Prand([ 1.5], inf),
+	    \amp, Pexprand(0.5, 0.95, inf),
+		\dur, Pwrand([Pseq([1/8],8), Pseq([1/4],4), Pseq([1/2],2)],[0.95,0.03,0.02],inf),
+		\dur, Prand([1/4, 1/2], inf),
+		//\pos, Pwhite(0, Pkey(\buf).collect(_.numFrames), inf).trace,
+		\pos, 530564,
+		\sus, Pkey(\dur) * 0.125 * Pkey(\vel).sqrt.reciprocal,
+		\pan, Pwhite(-1, 1, inf),
+		//\out, Pwrand( [0, ~bus[\reverb0], ~bus[\reverb1], ~bus[\pitchShift]],[0.8, 0.05, 0.05, 0.1],inf),
+		\out, 0
+		);
 
-				], inf)).play(t);
-
-
-
-
-Pbindef(\bomboProcessing,
-	\instrument, \kick2,
-	\dur, Prand([1, 0.25, 0.5], inf) / 2,
-	\pfunc, Ptime.new,
-	\amp, Pwhite(0.25, 1, inf),
-	\pan, Pwhite(-0.75, 0.75, inf),
-
-	\prova, Pfunc({
-		arg event;
-		var ampCercle, posCercle;
-
-		ampCercle = event[\amp].linlin(0.25, 1, 25, 150).asInteger;
-		posCercle = event[\pan].linlin(-0.75, 0.75, 100, 500).asInteger;
-		~processing.sendMsg("/", posCercle, 180, ampCercle, ampCercle) ;
-
-		/*
-		if( (event[\pfunc] % 1) == 0.0)
-		{~processing.sendMsg("/", posCercle, 180, ampCercle, ampCercle) }
-		{~processing.sendMsg("/", -1, -1, 0, 0) }
-		*/
-	})).play(t);
-
-Pbindef(\samples2,
-	\instrument, \play,
-	\buf, ~buffers[1],
-	\vel, Prand([ 1.5], inf),
-    \amp, Pexprand(0.5, 0.95, inf),
-	\dur, Pwrand([Pseq([1/8],8), Pseq([1/4],4), Pseq([1/2],2)],[0.95,0.03,0.02],inf),
-	\dur, Prand([1/4, 1/2], inf),
-	\pos, Pwhite(0, Pkey(\buf).collect(_.numFrames), inf).trace,
-	\pos, 530564,
-	\sus, Pkey(\dur) *  0.125 *  Pkey(\vel).sqrt.reciprocal,
-	\pan, Pwhite(-1, 1, inf),
-	//\out, Pwrand( [0, ~bus[\reverb0], ~bus[\reverb1], ~bus[\pitchShift]],[0.8, 0.05, 0.05, 0.1],inf),
-	\out, 0
-	).play(t);
-});
-
-});
+	s.bind({
+		Pbindef(\noise4_5).play(t);
+		Pbindef(\bomboProcessing).play(t);
+		Pbindef(\samples2).play(t);
+		});
+	});
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

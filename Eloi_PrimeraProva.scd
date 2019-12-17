@@ -59,7 +59,14 @@ SynthDef(\kick2, {
 	final = Pan2.ar(final, pan, amp);
 
 	Out.ar(out, final);}).add;
-
+	
+SynthDef(\kickGuapo, { |basefreq = 50, ratio = 7, sweeptime = 0.05, preamp = 1, amp = 0.5, //Originalment va amb amp=1
+	decay1 = 0.3, decay1L = 0.8, decay2 = 0.15, out|
+		var fcurve = EnvGen.kr(Env([basefreq * ratio, basefreq], [sweeptime], \exp)), //usa l'env (de 350 a 50 en 0.005) com a freq pel SinOsc. Crec que és el component tonal de baix.
+		env = EnvGen.kr(Env([1, decay1L, 0], [decay1, decay2], -4), doneAction: 2),  //Aquesta sí és l'envolvent temporal i percussiva?
+	sig = SinOsc.ar(fcurve, 0.5pi, preamp).distort * env * amp;
+	Out.ar(out, sig ! 2)
+	}).add;
 
 SynthDef(\noise1, {
 	arg amp, rel=0.1, pan, filtre=1000;

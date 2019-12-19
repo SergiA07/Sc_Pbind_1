@@ -114,6 +114,12 @@ s.waitForBoot({
 
 	s.sync;
 
+
+
+
+
+
+
 	///// DELCARACIO DE PBIND's DEFINITUS
 
 	Pbindef(\noise4_5,
@@ -243,6 +249,7 @@ s.waitForBoot({
 
 
 
+
 	///// EXECUCIÓ DE PBIND
 
 	(
@@ -250,30 +257,70 @@ s.waitForBoot({
 		////EVENT1 - 5 vegades 4/4 + 5/4
 		s.bind({
 			Pbindef(\noise4_5).play(t);
-			Pbindef(\bomboinicial).play(t);
 			});
 
 		18.wait;
-		treume bombo
-
-		45.wait;
 
 		//(1 * 4).wait; // 1 compàs de 4/4
 
 		////EVENT2
 		s.bind({
 			Pbindef(\noise4_5).stop;
-			Pbindef(\bomboinicial).stop;
-
 			Pbindef(\bomboProcessing).play(t);
 			Pbindef(\samples2).play(t);
 			});
 
-		(3 * 5).wait;  // 3 compasos de 5/4
+		(3 * 5).wait;
+
+		s.bind({
+			Pbindef(\bomboProcessing).stop;
+			Pbindef(\samples2).stop;
+			});
+
+
+		  // 3 compasos de 5/4
 		}).play(t);
 	);
+
+
 	});
 )
+
+
+
+
+/// ESTRUCTURA PEÇA
+
+
+145
+
+60/130
+
+(145 * 2.1666666666667).round // beats
+
+
+
+45
++
+32
++
+45
++
+64
++
+45
++
+32
++
+45
+
+
+308 * 0.46153846153846
+
+1/1.66
+
+
+314 * 0.60240963855422
 
 
 
@@ -337,8 +384,7 @@ Pbindef(\granocaotico1,
 	\sus, Pkey(\dur) *  1.1 *  Pkey(\vel).sqrt.reciprocal,
 	\pan, Pwrand([Pseq([0],16),Pseq([-1,1],1),Pwhite(-0.8,0.8,8)],[0.8,0.1,0.1],inf),
 	//\out, Pwrand( [0, ~bus[\reverb0], ~bus[\reverb1], ~bus[\pitchShift]],[0.8, 0.05, 0.05, 0.1],inf),
-	\out, 0
-).play(t);
+	\out, 0).play(t);
 //.quant_([1]);
 
 Pbindef(\samples1,
@@ -353,11 +399,7 @@ Pbindef(\samples1,
 	\sus, Pkey(\dur) *  0.125 *  Pkey(\vel).sqrt.reciprocal,
 	\pan, Pwhite(-1, 1, inf),
 	//\out, Pwrand( [0, ~bus[\reverb0], ~bus[\reverb1], ~bus[\pitchShift]],[0.8, 0.05, 0.05, 0.1],inf),
-	\out, 20
-).play(t);
-
-
-
+	\out, 20).play(t);
 
 
 
@@ -374,8 +416,11 @@ Pbindef(\bomboprova,
 	\rel, Pkey(\dur) * 1,
 	\freqPulse, Pkey(\dur) * Prand([ 4], inf),
 	\ampCua, 0.25,
-	\rqCua, 0.001,
-	).play(t)
+	\rqCua, 0.001).play(t)
+
+
+
+
 
 (
 s.bind({
@@ -450,36 +495,3 @@ Pbindef(\clickSin, \amp, 0.05).play(t);
 
 })
 )
-
-
-
-
-145
-
-60/130
-
-(145 * 2.1666666666667).round // beats
-
-
-
-45
-+
-32
-+
-45
-+
-64
-+
-45
-+
-32
-+
-45
-
-
-308 * 0.46153846153846
-
-1/1.66
-
-
-314 * 0.60240963855422

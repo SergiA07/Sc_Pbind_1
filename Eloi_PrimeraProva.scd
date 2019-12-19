@@ -1,5 +1,5 @@
 //MASTER
-
+s.boot
 (
 ServerQuit.removeAll;
 ServerBoot.removeAll;
@@ -114,7 +114,7 @@ s.waitForBoot({
 
 	s.sync;
 
-	///// PBIND's DEFINITUS
+	///// DELCARACIO DE PBIND's DEFINITUS
 
 	Pbindef(\noise4_5,
 		\instrument, \noise1,
@@ -241,11 +241,37 @@ s.waitForBoot({
 		\out, 0
 		);
 
-	s.bind({
-		Pbindef(\noise4_5).play(t);
-		Pbindef(\bomboProcessing).play(t);
-		Pbindef(\samples2).play(t);
-		});
+
+
+	///// EXECUCIÓ DE PBIND
+
+	(
+	Routine({
+		////EVENT1 - 5 vegades 4/4 + 5/4
+		s.bind({
+			Pbindef(\noise4_5).play(t);
+			Pbindef(\bomboinicial).play(t);
+			});
+
+		18.wait;
+		treume bombo
+
+		45.wait;
+
+		//(1 * 4).wait; // 1 compàs de 4/4
+
+		////EVENT2
+		s.bind({
+			Pbindef(\noise4_5).stop;
+			Pbindef(\bomboinicial).stop;
+
+			Pbindef(\bomboProcessing).play(t);
+			Pbindef(\samples2).play(t);
+			});
+
+		(3 * 5).wait;  // 3 compasos de 5/4
+		}).play(t);
+	);
 	});
 )
 
